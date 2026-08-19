@@ -19,7 +19,9 @@ export function requireSameOrigin(request: Request) {
 
   const hostAllowed =
     actual.host === expected.host ||
-    (!env.isProduction && host && actual.host === host);
+    ((!env.isProduction || env.isVercelPreview) &&
+      host &&
+      actual.host === host);
 
   if (!hostAllowed) {
     throw new ApiError(403, "forbidden", "Cross-origin requests are not allowed.");

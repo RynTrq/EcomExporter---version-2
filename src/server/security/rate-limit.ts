@@ -14,8 +14,11 @@ const policyLimits: Record<RateLimitPolicy, number> = {
   admin: 5,
 };
 
-export function enforceRateLimit(context: RequestContext, policy: RateLimitPolicy) {
-  const result = checkRateLimit({
+export async function enforceRateLimit(
+  context: RequestContext,
+  policy: RateLimitPolicy,
+) {
+  const result = await checkRateLimit({
     bucket: `${policy}:${context.ipHash}`,
     route: context.path,
     limit: policyLimits[policy],
@@ -33,4 +36,3 @@ export function enforceRateLimit(context: RequestContext, policy: RateLimitPolic
 
   return result;
 }
-

@@ -63,7 +63,7 @@ describe("same-origin gate", () => {
 });
 
 describe("admin authentication", () => {
-  it("accepts configured Basic credentials", () => {
+  it("accepts configured Basic credentials", async () => {
     const credentials = Buffer.from("admin:test-admin-key-12345").toString(
       "base64",
     );
@@ -71,20 +71,20 @@ describe("admin authentication", () => {
       headers: { authorization: `Basic ${credentials}` },
     });
 
-    expect(authenticateAdmin(request, createRequestContext(request))).toEqual({
-      username: "admin",
-    });
+    await expect(
+      authenticateAdmin(request, createRequestContext(request)),
+    ).resolves.toEqual({ username: "admin" });
   });
 
-  it("rejects bad Basic credentials", () => {
+  it("rejects bad Basic credentials", async () => {
     const credentials = Buffer.from("admin:wrong-password").toString("base64");
     const request = new Request("http://localhost/api/admin/leads", {
       headers: { authorization: `Basic ${credentials}` },
     });
 
-    expect(() => authenticateAdmin(request, createRequestContext(request))).toThrow(
-      ApiError,
-    );
+    await expect(
+      authenticateAdmin(request, createRequestContext(request)),
+    ).rejects.toBeInstanceOf(ApiError);
   });
 });
 

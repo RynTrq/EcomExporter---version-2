@@ -50,7 +50,7 @@ export default async function AdminPage() {
     );
   }
 
-  const leads = listLeadRecords(250);
+  const leads = await listLeadRecords(250);
 
   return (
     <section className="admin-shell">

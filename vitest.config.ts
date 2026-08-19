@@ -6,7 +6,6 @@ export default defineConfig({
     environment: "node",
     env: {
       NODE_ENV: "test",
-      DATABASE_PATH: "./data/test-vitest.db",
       ADMIN_KEY: "test-admin-key-12345",
       IP_HASH_SALT: "test-ip-hash-salt-12345",
       NEXT_PUBLIC_SITE_URL: "http://localhost:3000",

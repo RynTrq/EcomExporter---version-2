@@ -6,7 +6,7 @@ import { ApiError } from "@/server/http/errors";
 import type { RequestContext } from "@/server/http/context";
 import { safeEqual } from "@/server/security/crypto";
 
-export function authenticateAdmin(request: Request, context: RequestContext) {
+export async function authenticateAdmin(request: Request, context: RequestContext) {
   const authorization = request.headers.get("authorization");
   const encodedCredentials = authorization?.startsWith("Basic ")
     ? authorization.slice(6)
@@ -23,7 +23,7 @@ export function authenticateAdmin(request: Request, context: RequestContext) {
     !safeEqual(username, env.adminUser) ||
     !safeEqual(password, env.adminKey)
   ) {
-    createAuditEvent({
+    await createAuditEvent({
       actorType: "anonymous",
       action: "admin.auth_failed",
       entityType: "admin",
@@ -33,7 +33,7 @@ export function authenticateAdmin(request: Request, context: RequestContext) {
     throw new ApiError(401, "unauthorized", "Admin authentication required.");
   }
 
-  createAuditEvent({
+  await createAuditEvent({
     actorType: "admin",
     actorId: username,
     action: "admin.authenticated",
@@ -44,8 +44,8 @@ export function authenticateAdmin(request: Request, context: RequestContext) {
   return { username };
 }
 
-export function listAdminLeads(context: RequestContext, actorId: string) {
-  const leads = listLeadRecords(250).map((lead) => ({
+export async function listAdminLeads(context: RequestContext, actorId: string) {
+  const leads = (await listLeadRecords(250)).map((lead) => ({
     id: lead.id,
     name: lead.name,
     email: lead.email_display,
@@ -58,7 +58,7 @@ export function listAdminLeads(context: RequestContext, actorId: string) {
     leadScore: lead.lead_score,
     createdAt: lead.created_at,
   }));
-  createAuditEvent({
+  await createAuditEvent({
     actorType: "admin",
     actorId,
     action: "lead.listed",
@@ -69,4 +69,3 @@ export function listAdminLeads(context: RequestContext, actorId: string) {
   });
   return leads;
 }
-

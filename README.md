@@ -53,15 +53,15 @@ npm run verify
 
 ```bash
 NEXT_PUBLIC_SITE_URL=https://ecomexporter.com
-DATABASE_PATH=./data/ecomexporter.db
-ADMIN_USER=admin
-ADMIN_KEY=replace-with-a-long-random-value
+DATABASE_URL=postgresql://user:password@host/database?sslmode=require
 IP_HASH_SALT=replace-with-a-long-random-salt
 API_MAX_JSON_BYTES=32768
 RATE_LIMIT_WINDOW_MS=60000
 RATE_LIMIT_LEADS=5
 RATE_LIMIT_EVENTS=60
 RATE_LIMIT_CALCULATORS=30
+LEAD_NOTIFY_PHONE=+918929519035
+LEAD_NOTIFY_EMAIL=mdinternationalfancyhub@gmail.com
 ```
 
 For local browser testing you may set `NEXT_PUBLIC_SITE_URL` to the local
@@ -69,8 +69,9 @@ origin. Production must use the apex HTTPS URL exactly. Configure any desired
 Twilio or Resend notification variables documented in `.env.example`; an
 unset channel is skipped and never prevents a lead from being stored.
 
-The admin console is at `/admin`. Use HTTP Basic authentication with any
-configured `ADMIN_USER` and `ADMIN_KEY` as the password.
+The optional admin console is at `/admin` and remains disabled unless
+`ADMIN_KEY` is configured. Use HTTP Basic authentication with the configured
+`ADMIN_USER` (default `admin`) and `ADMIN_KEY` as the password.
 
 ## API Surface
 
@@ -89,17 +90,15 @@ See [docs/backend.md](docs/backend.md) for the backend runbook.
 
 ## Production Deployment
 
-This build is production-ready on a persistent, single-node Node.js host or
-container. Mount a durable volume for `DATABASE_PATH`, keep that volume out of
-the release image, and back it up. Set strong unique values for `ADMIN_KEY` and
-`IP_HASH_SALT`, then verify `/api/livez` and `/api/readyz` after every release.
+This build is production-ready for Vercel Functions with a managed Neon
+PostgreSQL database. Connect Neon to the Vercel project so `DATABASE_URL` is
+available at runtime, set a strong unique `IP_HASH_SALT`, and verify `/api/livez`
+and `/api/readyz` after every release. The database schema is applied lazily and
+idempotently on the first database-backed request.
 
-Do not deploy the write APIs unchanged to an ephemeral or horizontally scaled
-serverless runtime: local SQLite needs a writable persistent filesystem and a
-single writer. On Vercel or another multi-instance platform, migrate the
-repository layer to a managed PostgreSQL/libSQL service first. Static pages,
-metadata, robots, sitemap, and image optimization remain compatible with those
-platforms.
+Lead notifications are best-effort and independently enabled. Configure Resend
+for email and Twilio for SMS and WhatsApp; an unset provider is skipped without
+preventing the validated lead from being stored.
 
 Point the apex domain at the deployment. The application permanently redirects
 `www.ecomexporter.com` to the matching apex path and query. Submit
@@ -110,8 +109,8 @@ verify that the deployed `robots.txt` contains the same production origin.
 
 This repository is intentionally a deployable modular monolith. For a
 production seller operating system, keep the domain and route boundaries while
-replacing local SQLite with PostgreSQL, adding managed OIDC and organization
-RBAC, moving integration work to a durable queue, encrypting marketplace OAuth
+adding managed OIDC and organization RBAC, moving integration work to a durable
+queue, encrypting marketplace OAuth
 credentials with KMS, storing documents in S3-compatible object storage, and
 adding OpenTelemetry, Sentry, and marketplace-specific connector adapters.
 

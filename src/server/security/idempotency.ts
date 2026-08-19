@@ -55,7 +55,7 @@ export async function runIdempotent<T>(input: {
 
   const keyHash = sha256(`${input.context.method}:${input.context.path}:${key}`);
   const bodyHash = getBodyHash(input.parsedBody);
-  const existing = findIdempotencyRecord(keyHash);
+  const existing = await findIdempotencyRecord(keyHash);
 
   if (existing) {
     if (existing.body_hash !== bodyHash) {
@@ -65,7 +65,7 @@ export async function runIdempotent<T>(input: {
         "Idempotency-Key was already used with a different request body.",
       );
     }
-    createAuditEvent({
+    await createAuditEvent({
       actorType: "system",
       action: "idempotency.replayed",
       entityType: "api_request",
@@ -75,13 +75,13 @@ export async function runIdempotent<T>(input: {
     });
     return {
       status: existing.status,
-      body: JSON.parse(existing.response_json) as T,
+      body: existing.response_json as T,
       replayed: true,
     };
   }
 
   const result = await input.execute();
-  saveIdempotencyRecord({
+  await saveIdempotencyRecord({
     keyHash,
     method: input.context.method,
     path: input.context.path,
@@ -94,4 +94,3 @@ export async function runIdempotent<T>(input: {
 
   return { ...result, replayed: false };
 }
-

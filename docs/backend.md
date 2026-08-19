@@ -1,14 +1,15 @@
 # Backend Runbook
 
-This backend is a modular monolith designed for a persistent single-node Node
-deployment today and cleanly portable to a larger seller operating system later.
+This backend is a modular monolith designed for serverless deployment on Vercel
+with Neon PostgreSQL, while remaining portable to a larger seller operating
+system later.
 
 ## Architecture
 
 - `src/app/api/*` contains thin route adapters only.
 - `src/server/contracts/*` owns request validation and public API schemas.
 - `src/server/services/*` owns business workflows.
-- `src/server/db/*` owns migrations, the SQLite client, and repositories.
+- `src/server/db/*` owns migrations, the Neon client, and repositories.
 - `src/server/http/*` owns request context, JSON parsing, errors, and response
   envelopes.
 - `src/server/security/*` owns origin checks, rate limits, idempotency, hashing,
@@ -17,8 +18,9 @@ deployment today and cleanly portable to a larger seller operating system later.
 
 ## Persistence
 
-The database is created at `DATABASE_PATH` and migrated in code at startup.
-SQLite runs with WAL, foreign keys, a busy timeout, and full synchronous writes.
+The application uses Neon PostgreSQL through its serverless HTTP driver. The
+schema is applied lazily and idempotently on the first database-backed request,
+which keeps Next.js build-time route discovery independent of database access.
 
 Core tables:
 
@@ -29,8 +31,7 @@ Core tables:
   intelligence.
 - `api_idempotency_keys` safely replays duplicate lead submissions.
 - `audit_events` records operationally meaningful actions.
-- `outbox_messages` is reserved for a future durable email, CRM, or workflow worker.
-- `rate_limit_hits` provides durable sliding-window rate limiting.
+- `rate_limit_windows` provides durable atomic fixed-window rate limiting.
 - `api_requests` records request IDs, status codes, duration, and error codes.
 
 ## Security Controls
@@ -69,7 +70,7 @@ Core tables:
 - `GET /api/livez`
   - Cheap process liveness; does not touch the database.
 - `GET /api/readyz`
-  - Database, storage, and config readiness.
+  - Database and configuration readiness.
 
 ## Verification
 
@@ -84,11 +85,10 @@ an npm production audit.
 
 ## Production Evolution
 
-SQLite is appropriate for this local deployable build. At higher traffic or
-multi-instance scale, keep the same route, service, repository, and contract
-boundaries while moving:
+The current Neon-backed deployment is suitable for a serverless marketing site.
+At higher traffic or broader operational scope, keep the same route, service,
+repository, and contract boundaries while moving:
 
-- data storage to PostgreSQL with Prisma, Drizzle, or SQL migrations;
 - rate limits to Redis or a managed edge limiter;
 - outbox processing to a durable queue;
 - authentication to OIDC with organization RBAC;

@@ -8,11 +8,9 @@ import {
   type LeadSubmission,
 } from "@/server/contracts/leads";
 import {
-  appendLeadStatusHistory,
   createAuditEvent,
-  createLeadRecord,
+  createLeadSubmission,
   findRecentDuplicateLead,
-  runWriteTransaction,
 } from "@/server/db/repositories";
 import { ApiError } from "@/server/http/errors";
 import type { RequestContext } from "@/server/http/context";
@@ -29,7 +27,7 @@ export async function submitLead(
   context: RequestContext,
 ): Promise<SubmittedLead> {
   if (input.website) {
-    createAuditEvent({
+    await createAuditEvent({
       actorType: "anonymous",
       action: "lead.honeypot_triggered",
       entityType: "lead",
@@ -51,7 +49,7 @@ export async function submitLead(
   const emailNormalized = normalizeEmail(input.email);
   const phoneNormalized = normalizePhone(input.phone);
   const duplicateSince = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
-  const duplicate = findRecentDuplicateLead({
+  const duplicate = await findRecentDuplicateLead({
     emailNormalized,
     phoneNormalized,
     marketplace: input.marketplace,
@@ -60,7 +58,7 @@ export async function submitLead(
   });
 
   if (duplicate) {
-    createAuditEvent({
+    await createAuditEvent({
       actorType: "anonymous",
       action: "lead.duplicate_suppressed",
       entityType: "lead",
@@ -74,8 +72,8 @@ export async function submitLead(
 
   const id = randomUUID();
   const leadScore = scoreLead(input);
-  runWriteTransaction(() => {
-    createLeadRecord({
+  await createLeadSubmission({
+    lead: {
       id,
       name: input.name,
       email_normalized: emailNormalized,
@@ -92,17 +90,9 @@ export async function submitLead(
       ip_hash: context.ipHash,
       user_agent: context.userAgent,
       request_id: context.requestId,
-    });
-
-    appendLeadStatusHistory({
-      id: randomUUID(),
-      leadId: id,
-      toStatus: "new",
-      actorType: "anonymous",
-      requestId: context.requestId,
-    });
-
-    createAuditEvent({
+    },
+    historyId: randomUUID(),
+    audit: {
       actorType: "anonymous",
       action: "lead.created",
       entityType: "lead",
@@ -115,8 +105,7 @@ export async function submitLead(
         revenue: input.monthlyRevenue || null,
         leadScore,
       },
-    });
-
+    },
   });
 
   return { id, status: "created" };

@@ -31,7 +31,7 @@ export function createLegacyRoute(
 
       const result = await handler(request, context);
       try {
-        recordApiRequest({
+        await recordApiRequest({
           requestId: context.requestId,
           method: context.method,
           path: context.path,
@@ -67,7 +67,7 @@ export function createLegacyRoute(
         errorCode: apiError.code,
       });
       try {
-        recordApiRequest({
+        await recordApiRequest({
           requestId: context.requestId,
           method: context.method,
           path: context.path,

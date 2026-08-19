@@ -12,10 +12,10 @@ export const dynamic = "force-dynamic";
 
 export const POST = createLegacyRoute(["POST"], async (request, context) => {
   requireSameOrigin(request);
-  enforceRateLimit(context, "calculator");
+  await enforceRateLimit(context, "calculator");
 
   const parsed = await parseJsonBody(request, estimateSchema);
-  const estimate = estimateMarketplaceProfit(parsed, context);
+  const estimate = await estimateMarketplaceProfit(parsed, context);
 
   return { status: 200, body: estimate };
 });

@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export const POST = createLegacyRoute(["POST"], async (request, context) => {
   requireSameOrigin(request);
-  enforceRateLimit(context, "event");
+  await enforceRateLimit(context, "event");
 
   const parsed = await parseJsonBody(request, eventSubmissionSchema);
   await recordAnalyticsEvent(parsed, context);

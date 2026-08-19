@@ -1,7 +1,5 @@
 import "server-only";
 
-import fs from "node:fs";
-import path from "node:path";
 import { env } from "@/server/config/env";
 import { getDatabaseHealth } from "@/server/db/repositories";
 
@@ -15,12 +13,11 @@ export function getLiveStatus() {
   };
 }
 
-export function getReadyStatus() {
-  const db = getDatabaseHealth();
-  const storage = checkWritableDirectory(path.dirname(env.databasePath));
+export async function getReadyStatus() {
+  const db = await getDatabaseHealth();
   const siteUrlConfigured = Boolean(env.siteUrl);
 
-  const ok = db.connected && storage.writable && siteUrlConfigured;
+  const ok = db.connected && siteUrlConfigured;
 
   return {
     status: ok ? "ok" : "degraded",
@@ -28,18 +25,7 @@ export function getReadyStatus() {
     time: new Date().toISOString(),
     checks: {
       database: db.connected,
-      storage: storage.writable,
       configuration: siteUrlConfigured,
     },
   };
-}
-
-function checkWritableDirectory(directory: string) {
-  try {
-    fs.mkdirSync(directory, { recursive: true });
-    fs.accessSync(directory, fs.constants.R_OK | fs.constants.W_OK);
-    return { writable: true };
-  } catch {
-    return { writable: false };
-  }
 }

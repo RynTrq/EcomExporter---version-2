@@ -1,14 +1,14 @@
 import "server-only";
 
-import path from "node:path";
 import { z } from "zod";
 
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
+  VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
   NEXT_PUBLIC_SITE_URL: z.url().default("https://ecomexporter.com"),
-  DATABASE_PATH: z.string().min(1).default("./data/ecomexporter.db"),
+  DATABASE_URL: z.url().optional(),
   ADMIN_USER: z.string().min(1).default("admin"),
   ADMIN_KEY: z.string().min(12).optional(),
   IP_HASH_SALT: z.string().min(16).default("local-development-ip-hash-salt"),
@@ -19,8 +19,12 @@ const envSchema = z.object({
   RATE_LIMIT_CALCULATORS: z.coerce.number().int().positive().default(30),
 
   // Lead notifications — where new enquiries are delivered.
-  LEAD_NOTIFY_PHONE: z.string().trim().min(8).default("+918447077283"),
-  LEAD_NOTIFY_EMAIL: z.string().trim().email().default("info@ecomexporter.com"),
+  LEAD_NOTIFY_PHONE: z.string().trim().min(8).default("+918929519035"),
+  LEAD_NOTIFY_EMAIL: z
+    .string()
+    .trim()
+    .email()
+    .default("mdinternationalfancyhub@gmail.com"),
   // Twilio (SMS + WhatsApp). All optional; channels are skipped if unset.
   TWILIO_ACCOUNT_SID: z.string().trim().min(1).optional(),
   TWILIO_AUTH_TOKEN: z.string().trim().min(1).optional(),
@@ -31,7 +35,20 @@ const envSchema = z.object({
   RESEND_FROM: z.string().trim().min(1).default("Ecom Exporter <onboarding@resend.dev>"),
 });
 
-const parsed = envSchema.safeParse(process.env);
+export function normalizeEnvironment(
+  source: Record<string, string | undefined>,
+) {
+  return Object.fromEntries(
+    Object.entries(source).map(([key, value]) => [
+      key,
+      typeof value === "string" && value.trim() === "" ? undefined : value,
+    ]),
+  );
+}
+
+const normalizedEnvironment = normalizeEnvironment(process.env);
+
+const parsed = envSchema.safeParse(normalizedEnvironment);
 
 if (!parsed.success) {
   const details = parsed.error.issues
@@ -42,11 +59,9 @@ if (!parsed.success) {
 
 export const env = {
   nodeEnv: parsed.data.NODE_ENV,
+  vercelEnvironment: parsed.data.VERCEL_ENV,
   siteUrl: parsed.data.NEXT_PUBLIC_SITE_URL,
-  databasePath: path.resolve(
-    /* turbopackIgnore: true */ process.cwd(),
-    parsed.data.DATABASE_PATH,
-  ),
+  databaseUrl: parsed.data.DATABASE_URL,
   adminUser: parsed.data.ADMIN_USER,
   adminKey: parsed.data.ADMIN_KEY,
   ipHashSalt: parsed.data.IP_HASH_SALT,
@@ -56,6 +71,7 @@ export const env = {
   rateLimitEvents: parsed.data.RATE_LIMIT_EVENTS,
   rateLimitCalculators: parsed.data.RATE_LIMIT_CALCULATORS,
   isProduction: parsed.data.NODE_ENV === "production",
+  isVercelPreview: parsed.data.VERCEL_ENV === "preview",
   leadNotifyPhone: parsed.data.LEAD_NOTIFY_PHONE,
   leadNotifyEmail: parsed.data.LEAD_NOTIFY_EMAIL,
   twilioAccountSid: parsed.data.TWILIO_ACCOUNT_SID,

@@ -1,31 +1,26 @@
 import "server-only";
 
-import Database from "better-sqlite3";
-import fs from "node:fs";
-import path from "node:path";
+import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
 import { env } from "@/server/config/env";
-import { runMigrations } from "@/server/db/migrations";
 
-const globalForDb = globalThis as unknown as {
-  ecomExporterDb?: Database.Database;
-};
-
-fs.mkdirSync(path.dirname(env.databasePath), { recursive: true });
-
-export const db =
-  globalForDb.ecomExporterDb ||
-  new Database(env.databasePath, {
-    fileMustExist: false,
-  });
-
-if (!env.isProduction) {
-  globalForDb.ecomExporterDb = db;
+export class DatabaseNotConfiguredError extends Error {
+  constructor() {
+    super("DATABASE_URL is not configured.");
+    this.name = "DatabaseNotConfiguredError";
+  }
 }
 
-db.pragma("journal_mode = WAL");
-db.pragma("synchronous = FULL");
-db.pragma("foreign_keys = ON");
-db.pragma("busy_timeout = 5000");
+let sqlClient: NeonQueryFunction<false, false> | undefined;
 
-runMigrations(db);
+export function hasDatabaseConfiguration() {
+  return Boolean(env.databaseUrl);
+}
 
+export function getSql() {
+  if (!env.databaseUrl) {
+    throw new DatabaseNotConfiguredError();
+  }
+
+  sqlClient ??= neon(env.databaseUrl);
+  return sqlClient;
+}

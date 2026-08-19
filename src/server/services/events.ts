@@ -6,9 +6,7 @@ import {
   type EventSubmission,
 } from "@/server/contracts/events";
 import {
-  createAuditEvent,
-  createEventRecord,
-  runWriteTransaction,
+  createEventWithAudit,
 } from "@/server/db/repositories";
 import type { RequestContext } from "@/server/http/context";
 
@@ -19,26 +17,15 @@ export async function recordAnalyticsEvent(
   context: RequestContext,
 ) {
   const id = randomUUID();
-  runWriteTransaction(() => {
-    createEventRecord({
-      id,
-      name: input.name,
-      path: input.path,
-      sessionId: input.sessionId,
-      metadata: input.metadata,
-      ipHash: context.ipHash,
-      userAgent: context.userAgent,
-      requestId: context.requestId,
-    });
-    createAuditEvent({
-      actorType: "anonymous",
-      action: "event.accepted",
-      entityType: "event",
-      entityId: id,
-      requestId: context.requestId,
-      ipHash: context.ipHash,
-      metadata: { name: input.name, path: input.path },
-    });
+  await createEventWithAudit({
+    id,
+    name: input.name,
+    path: input.path,
+    sessionId: input.sessionId,
+    metadata: input.metadata,
+    ipHash: context.ipHash,
+    userAgent: context.userAgent,
+    requestId: context.requestId,
   });
   return { id };
 }

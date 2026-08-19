@@ -5,10 +5,10 @@ import { enforceRateLimit } from "@/server/security/rate-limit";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export const GET = createLegacyRoute(["GET"], (request, context) => {
-  enforceRateLimit(context, "admin");
-  const actor = authenticateAdmin(request, context);
-  const leads = listAdminLeads(context, actor.username);
+export const GET = createLegacyRoute(["GET"], async (request, context) => {
+  await enforceRateLimit(context, "admin");
+  const actor = await authenticateAdmin(request, context);
+  const leads = await listAdminLeads(context, actor.username);
 
   return {
     status: 200,
