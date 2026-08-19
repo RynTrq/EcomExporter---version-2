@@ -52,7 +52,7 @@ npm run verify
 ## Environment
 
 ```bash
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_URL=https://ecomexporter.com
 DATABASE_PATH=./data/ecomexporter.db
 ADMIN_USER=admin
 ADMIN_KEY=replace-with-a-long-random-value
@@ -63,6 +63,11 @@ RATE_LIMIT_LEADS=5
 RATE_LIMIT_EVENTS=60
 RATE_LIMIT_CALCULATORS=30
 ```
+
+For local browser testing you may set `NEXT_PUBLIC_SITE_URL` to the local
+origin. Production must use the apex HTTPS URL exactly. Configure any desired
+Twilio or Resend notification variables documented in `.env.example`; an
+unset channel is skipped and never prevents a lead from being stored.
 
 The admin console is at `/admin`. Use HTTP Basic authentication with any
 configured `ADMIN_USER` and `ADMIN_KEY` as the password.
@@ -81,6 +86,25 @@ configured `ADMIN_USER` and `ADMIN_KEY` as the password.
   operators.
 
 See [docs/backend.md](docs/backend.md) for the backend runbook.
+
+## Production Deployment
+
+This build is production-ready on a persistent, single-node Node.js host or
+container. Mount a durable volume for `DATABASE_PATH`, keep that volume out of
+the release image, and back it up. Set strong unique values for `ADMIN_KEY` and
+`IP_HASH_SALT`, then verify `/api/livez` and `/api/readyz` after every release.
+
+Do not deploy the write APIs unchanged to an ephemeral or horizontally scaled
+serverless runtime: local SQLite needs a writable persistent filesystem and a
+single writer. On Vercel or another multi-instance platform, migrate the
+repository layer to a managed PostgreSQL/libSQL service first. Static pages,
+metadata, robots, sitemap, and image optimization remain compatible with those
+platforms.
+
+Point the apex domain at the deployment. The application permanently redirects
+`www.ecomexporter.com` to the matching apex path and query. Submit
+`https://ecomexporter.com/sitemap.xml` in Search Console after release and
+verify that the deployed `robots.txt` contains the same production origin.
 
 ## Production Evolution
 

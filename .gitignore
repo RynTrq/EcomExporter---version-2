@@ -1,0 +1,106 @@
+# Dependencies and package-manager state
+/node_modules/
+/.pnp
+.pnp.*
+/.yarn/*
+!/.yarn/patches/
+!/.yarn/plugins/
+!/.yarn/releases/
+!/.yarn/versions/
+/.npm/
+/.pnpm-store/
+/.bun/
+
+# Next.js and production build output
+/.next/
+/.next-*/
+/out/
+/build/
+
+# Test output and coverage
+/coverage/
+/playwright-report/
+/test-results/
+/blob-report/
+/.vitest/
+
+# Environment files (the documented template is safe to commit)
+.env*
+!.env.example
+
+# Local runtime data
+/data/*.db
+/data/*.db-shm
+/data/*.db-wal
+/data/*.db-journal
+/data/*.sqlite
+/data/*.sqlite-shm
+/data/*.sqlite-wal
+/data/*.sqlite-journal
+
+# Deployment and tool caches
+/.vercel/
+/.turbo/
+/.cache/
+/.code-review-graph/
+.eslintcache
+.stylelintcache
+
+# Logs and diagnostic output
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# TypeScript-generated files
+*.tsbuildinfo
+next-env.d.ts
+
+# Local editor and operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+*.swp
+*.swo
+*~
+
+# Local credentials and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local AI-agent and MCP configuration
+/.claude/
+/.codex/
+/.gemini/
+/.continue/
+/.cursor/
+/.windsurf/
+/.mcp.json
+/.aider*
+/CLAUDE.md
+/AGENTS.md
+/GEMINI.md
+
+# Root-level reference archives, recordings, and source handoff files
+/ecomexporter.pdf
+/*.rar
+/*.zip
+/*.7z
+/*.tar
+/*.tar.gz
+/*.mov
+/*.mp4
+/*.m4v
+/*.webm
+/*.screenrecording
+/logo.png

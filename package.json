@@ -1,0 +1,43 @@
+{
+  "name": "ecomexporter-next",
+  "version": "0.1.0",
+  "private": true,
+  "overrides": {
+    "postcss": "$postcss"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "npm run build && playwright test",
+    "test:watch": "vitest",
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm audit --omit=dev"
+  },
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.2.10",
+    "@fontsource-variable/manrope": "^5.2.8",
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "better-sqlite3": "^12.10.0",
+    "lucide-react": "^1.17.0",
+    "next": "^16.3.1",
+    "postcss": "^8.5.26",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "server-only": "^0.0.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^16.3.1",
+    "typescript": "^5",
+    "vitest": "^4.1.8"
+  }
+}
