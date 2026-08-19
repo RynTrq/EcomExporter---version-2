@@ -4,7 +4,7 @@ import { env } from "@/server/config/env";
 import { logger } from "@/server/observability/logger";
 import type { LeadSubmission } from "@/server/contracts/leads";
 
-type LeadNotificationInput = {
+export type LeadNotificationInput = {
   lead: LeadSubmission;
   id: string;
   leadScore: number;
@@ -12,6 +12,49 @@ type LeadNotificationInput = {
 };
 
 const CHANNEL_TIMEOUT_MS = 8000;
+const TEMPLATE_VALUE_MAX_LENGTH = 240;
+
+type TwilioMessageContent =
+  | { body: string }
+  | { contentSid: string; contentVariables: Record<string, string> };
+
+function toTemplateValue(value: string | undefined, fallback = "Not provided") {
+  const compact = value?.replace(/\s+/g, " ").trim() || fallback;
+  if (compact.length <= TEMPLATE_VALUE_MAX_LENGTH) return compact;
+  return `${compact.slice(0, TEMPLATE_VALUE_MAX_LENGTH - 1).trimEnd()}…`;
+}
+
+export function buildWhatsAppTemplateVariables({
+  lead,
+  leadScore,
+}: LeadNotificationInput) {
+  return {
+    "1": toTemplateValue(lead.name),
+    "2": toTemplateValue(lead.email),
+    "3": toTemplateValue(lead.phone),
+    "4": toTemplateValue(lead.company),
+    "5": toTemplateValue(lead.marketplace),
+    "6": toTemplateValue(lead.monthlyRevenue, "Prefer not to say"),
+    "7": toTemplateValue(lead.message),
+    "8": String(leadScore),
+    "9": toTemplateValue(lead.source),
+  };
+}
+
+export function buildTwilioMessageParams(
+  to: string,
+  from: string,
+  content: TwilioMessageContent,
+) {
+  const params = new URLSearchParams({ To: to, From: from });
+  if ("contentSid" in content) {
+    params.set("ContentSid", content.contentSid);
+    params.set("ContentVariables", JSON.stringify(content.contentVariables));
+  } else {
+    params.set("Body", content.body);
+  }
+  return params;
+}
 
 /**
  * Render a new lead into a human-readable plain-text brief shared across
@@ -45,7 +88,7 @@ export function formatLeadMessage({ lead, leadScore }: LeadNotificationInput) {
 async function sendTwilioMessage(
   to: string,
   from: string,
-  body: string,
+  content: TwilioMessageContent,
   channel: "sms" | "whatsapp",
 ) {
   const sid = env.twilioAccountSid;
@@ -53,7 +96,7 @@ async function sendTwilioMessage(
   if (!sid || !token) return false;
 
   const auth = Buffer.from(`${sid}:${token}`).toString("base64");
-  const params = new URLSearchParams({ To: to, From: from, Body: body });
+  const params = buildTwilioMessageParams(to, from, content);
 
   const response = await fetch(
     `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
@@ -77,16 +120,27 @@ async function sendTwilioMessage(
 
 async function sendSms(body: string) {
   if (!env.twilioSmsFrom) return false;
-  return sendTwilioMessage(env.leadNotifyPhone, env.twilioSmsFrom, body, "sms");
+  return sendTwilioMessage(
+    env.leadNotifyPhone,
+    env.twilioSmsFrom,
+    { body },
+    "sms",
+  );
 }
 
-async function sendWhatsApp(body: string) {
+async function sendWhatsApp(body: string, input: LeadNotificationInput) {
   if (!env.twilioWhatsappFrom) return false;
   const to = `whatsapp:${env.leadNotifyPhone}`;
   const from = env.twilioWhatsappFrom.startsWith("whatsapp:")
     ? env.twilioWhatsappFrom
     : `whatsapp:${env.twilioWhatsappFrom}`;
-  return sendTwilioMessage(to, from, body, "whatsapp");
+  const content: TwilioMessageContent = env.twilioWhatsappContentSid
+    ? {
+        contentSid: env.twilioWhatsappContentSid,
+        contentVariables: buildWhatsAppTemplateVariables(input),
+      }
+    : { body };
+  return sendTwilioMessage(to, from, content, "whatsapp");
 }
 
 async function sendEmail(subject: string, body: string) {
@@ -124,7 +178,7 @@ export async function dispatchLeadNotifications(input: LeadNotificationInput) {
   const subject = `New lead: ${input.lead.name} — ${input.lead.marketplace}`;
 
   const channels: Array<[string, Promise<boolean>]> = [
-    ["whatsapp", sendWhatsApp(body)],
+    ["whatsapp", sendWhatsApp(body, input)],
     ["sms", sendSms(body)],
     ["email", sendEmail(subject, body)],
   ];

@@ -30,6 +30,11 @@ const envSchema = z.object({
   TWILIO_AUTH_TOKEN: z.string().trim().min(1).optional(),
   TWILIO_SMS_FROM: z.string().trim().min(1).optional(),
   TWILIO_WHATSAPP_FROM: z.string().trim().min(1).optional(),
+  TWILIO_WHATSAPP_CONTENT_SID: z
+    .string()
+    .trim()
+    .regex(/^HX[A-Za-z0-9]{32}$/)
+    .optional(),
   // Resend (email). Optional; skipped if unset.
   RESEND_API_KEY: z.string().trim().min(1).optional(),
   RESEND_FROM: z.string().trim().min(1).default("Ecom Exporter <onboarding@resend.dev>"),
@@ -78,6 +83,7 @@ export const env = {
   twilioAuthToken: parsed.data.TWILIO_AUTH_TOKEN,
   twilioSmsFrom: parsed.data.TWILIO_SMS_FROM,
   twilioWhatsappFrom: parsed.data.TWILIO_WHATSAPP_FROM,
+  twilioWhatsappContentSid: parsed.data.TWILIO_WHATSAPP_CONTENT_SID,
   resendApiKey: parsed.data.RESEND_API_KEY,
   resendFrom: parsed.data.RESEND_FROM,
 };

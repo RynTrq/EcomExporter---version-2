@@ -100,6 +100,12 @@ Lead notifications are best-effort and independently enabled. Configure Resend
 for email and Twilio for SMS and WhatsApp; an unset provider is skipped without
 preventing the validated lead from being stored.
 
+For production WhatsApp alerts outside the 24-hour customer-service window,
+configure `TWILIO_WHATSAPP_CONTENT_SID` with an approved Twilio Content Template.
+The application sends template variables for lead name, email, phone, company,
+marketplace, revenue, message, score, and source. If the Content SID is unset,
+WhatsApp uses a free-form body for Sandbox or active-session testing.
+
 Point the apex domain at the deployment. The application permanently redirects
 `www.ecomexporter.com` to the matching apex path and query. Submit
 `https://ecomexporter.com/sitemap.xml` in Search Console after release and
