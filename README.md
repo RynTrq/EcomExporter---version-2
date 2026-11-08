@@ -60,8 +60,8 @@ RATE_LIMIT_WINDOW_MS=60000
 RATE_LIMIT_LEADS=5
 RATE_LIMIT_EVENTS=60
 RATE_LIMIT_CALCULATORS=30
-LEAD_NOTIFY_PHONE=+918929519035
-LEAD_NOTIFY_EMAIL=mdinternationalfancyhub@gmail.com
+LEAD_NOTIFY_PHONE=replace-with-your-notification-phone
+LEAD_NOTIFY_EMAIL=replace-with-your-notification-email
 ```
 
 For local browser testing you may set `NEXT_PUBLIC_SITE_URL` to the local
@@ -90,7 +90,7 @@ See [docs/backend.md](docs/backend.md) for the backend runbook.
 
 ## Production Deployment
 
-This build is production-ready for Vercel Functions with a managed Neon
+This build targets Vercel Functions with a managed Neon
 PostgreSQL database. Connect Neon to the Vercel project so `DATABASE_URL` is
 available at runtime, set a strong unique `IP_HASH_SALT`, and verify `/api/livez`
 and `/api/readyz` after every release. The database schema is applied lazily and
